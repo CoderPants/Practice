@@ -25,11 +25,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    worker.cpp
+    worker.cpp \
+    shareddata.cpp
 
 HEADERS += \
         mainwindow.h \
-    worker.h
+    worker.h \
+    shareddata.h
 
 FORMS += \
         mainwindow.ui

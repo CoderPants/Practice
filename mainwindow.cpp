@@ -1,9 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <unistd.h>
+
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDebug>
+#include <QtMath>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -11,17 +14,30 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setFixedSize(500,300);
+    byteVector.resize(sampleBlock);
+
+    thread = new QThread;
+    worker = new Worker;
+    queue = new SharedData;
+
+    connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
+    connect(worker, SIGNAL(sendQueueElem(QVector <complex>*)),
+            queue, SLOT(setQueueElem(QVector<complex>*)));
+    connect(worker, SIGNAL(fileEnd()), queue, SLOT(end()));
+    connect(queue, SIGNAL(queueIsReady()), this, SLOT(getSamples()));
+    connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
 {
     qDebug() << "In destructor";
+    //Trying to therminate thread
     thread->quit();
     thread->wait(5000);
     qDebug() << "Thread terminated";
 
+    delete queue;
     delete worker;
-
     delete ui;
 }
 
@@ -42,51 +58,48 @@ void MainWindow::on_startCountingBtn_clicked()
         return;
     }
 
-    thread = new QThread;
-    worker = new Worker(nullptr, filePath);
-    worker->setRunning(true);
-
+    worker->setFilePath(filePath);
+    worker->openFile();
     worker->moveToThread(thread);
-
-    connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
-    connect(worker, SIGNAL(sendSamples(QQueue <qint8>*)),
-            this, SLOT(getSamples(QQueue <qint8>*)));
-    connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
-
+    queue->setLength(10);
     thread->start();
-
 }
 
-void MainWindow::getSamples(QQueue<qint8> *sampleQueue)
+void MainWindow::getSamples()
 {
-    worker->setRunning(false);
-
-    qDebug() << "In function";
-    qint8 maxSample = 0;
-    qint8 minSample = 0;
-    qint8 sample = 0;
-
-    qDebug() << "Length of the queue" << sampleQueue->length();
-
-    while(!sampleQueue->isEmpty())
+    if(queue->tryToLock())
     {
-        sample = sampleQueue->dequeue();
-        maxSample = qMax(maxSample, sample);
-        minSample = qMin(minSample, sample);
+        qDebug() << "Main Thread: " << QThread::currentThread();
+        while (!queue->isEmpty())
+        {
+            byteVector = queue->getQueueElem();
+
+            number = qSqrt(byteVector[0].real * byteVector[0].real +
+                           byteVector[0].im * byteVector[0].im);
+
+            maxSample = number;
+            minSample = number;
+
+            for(int i = 1; i < sampleBlock; i++)
+            {
+                number = qSqrt(byteVector[i].real * byteVector[i].real +
+                               byteVector[i].im * byteVector[i].im);
+                maxSample = qMax(number, maxSample);
+                minSample = qMin(number, minSample);
+            }
+
+        }
+
+        valueStr.setNum(maxSample);
+        ui->maxValueLabel->setText(valueStr);
+
+        valueStr.setNum(minSample);
+        ui->minValueLabel->setText(valueStr);
+
+        queue->unlock();
     }
-
-    QString value;
-    value.setNum(maxSample);
-    ui->maxValueLabel->setText(value);
-
-    value.setNum(minSample);
-    ui->minValueLabel->setText(value);
-
-    qDebug() << maxSample;
-    qDebug() << minSample;
-
-    worker->setRunning(true);
-    //connect(this, SIGNAL(startReading()), worker, SLOT(readingSamples()));
-    //emit(startReading());
-    qDebug() <<  worker->running();
+    else
+    {
+        qDebug() << "Didn't lock!";
+    }
 }

@@ -1,18 +1,14 @@
 #include "worker.h"
 #include <QDebug>
+#include <QThread>
 
 #include <unistd.h>
 
-#define sampleBlock 16384
 
-Worker::Worker(QObject *parent, QString str) : QObject(parent), m_filePath(str)
+Worker::Worker(QObject *parent) : QObject(parent)
 {
-    audioFile.setFileName(m_filePath);
-    audioFile.open(QIODevice::ReadOnly);
-
-    stream.setDevice(&audioFile);
-    stream.setVersion(QDataStream::Qt_5_11);
-    stream.setByteOrder(QDataStream::BigEndian);
+    locker = new SharedData;
+    byteVector.resize(sampleBlock);
 }
 
 Worker::~Worker()
@@ -21,23 +17,19 @@ Worker::~Worker()
     audioFile.close();
 }
 
-bool Worker::running() const
-{
-    return m_running;
-}
-
 QString Worker::filePath() const
 {
     return m_filePath;
 }
 
-void Worker::setRunning(bool running)
+void Worker::openFile()
 {
-    if (m_running == running)
-        return;
+    audioFile.setFileName(m_filePath);
+    audioFile.open(QIODevice::ReadOnly);
 
-    m_running = running;
-    emit runningChanged(m_running);
+    stream.setDevice(&audioFile);
+    stream.setVersion(QDataStream::Qt_5_11);
+    stream.setByteOrder(QDataStream::BigEndian);
 }
 
 void Worker::setFilePath(QString filePath)
@@ -53,27 +45,38 @@ void Worker::readingSamples()
 {
     forever
     {
-        if(m_running)
-       {
-            if(i % sampleBlock == 0 && i != 0)
-            {
-                qDebug() << "i in worker" << i;
-                qDebug() << m_running;
-                emit(sendSamples(&sampleQueue));
-                sleep(1);
-            }
-
-            if(stream.atEnd() || i == sampleBlock*2)
-            {
-                break;
-            }
-
-            stream >> byte;
-            sampleQueue.enqueue(static_cast<qint8>(byte-127));
-
-            i++;
+        locker->lock();
+        if(stream.atEnd())
+        {
+            locker->unlock();
+            break;
         }
-        emit(finished());
-        //break;
+
+        if(i == sampleBlock)
+        {
+            qDebug() << "Thread in worker: " << QThread::currentThread();
+            locker->unlock();
+            emit(sendQueueElem(&byteVector));
+
+            //Synchronization of thread
+            //Witout it, will be collapse of threads
+            sleep(1);
+            i = 0;
+        }
+
+        stream >> byte;
+        number.real = static_cast<qint8>(byte-127);
+
+        stream >> byte;
+        number.im = static_cast<qint8>(byte-127);
+
+        byteVector[i] = number;
+
+        i++;
+        locker->unlock();
     }
+    //To shareddata
+    emit(fileEnd());
+    //To main
+    emit(finished());
 }
