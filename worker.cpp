@@ -7,8 +7,8 @@
 
 Worker::Worker(QObject *parent) : QObject(parent)
 {
-    locker = new SharedData;
     byteVector.resize(sampleBlock);
+    i = 0;
 }
 
 Worker::~Worker()
@@ -32,6 +32,11 @@ void Worker::openFile()
     stream.setByteOrder(QDataStream::BigEndian);
 }
 
+void Worker::setQueue(SharedData *queue)
+{
+    this->queue = queue;
+}
+
 void Worker::setFilePath(QString filePath)
 {
     if (m_filePath == filePath)
@@ -45,38 +50,40 @@ void Worker::readingSamples()
 {
     forever
     {
-        locker->lock();
-        if(stream.atEnd())
+        if(queue->getQueueSize() < queue->length())
         {
-            locker->unlock();
-            break;
+            queue->lock();
+            if(stream.atEnd())
+            {
+                queue->unlock();
+                break;
+            }
+
+            if(i == sampleBlock)
+            {
+                qDebug() << "Thread in worker: " << QThread::currentThread() << "i"<<i;
+                queue->unlock();
+                queue->setQueueElem(&byteVector);
+
+                sleep(1);
+                i = 0;
+            }
+
+            stream >> byte;
+            number.real = static_cast<qint8>(byte-127);
+
+            stream >> byte;
+            number.im = static_cast<qint8>(byte-127);
+
+            byteVector[i] = number;
+
+            i++;
+            queue->unlock();
         }
-
-        if(i == sampleBlock)
-        {
-            qDebug() << "Thread in worker: " << QThread::currentThread();
-            locker->unlock();
-            emit(sendQueueElem(&byteVector));
-
-            //Synchronization of thread
-            //Witout it, will be collapse of threads
-            sleep(1);
-            i = 0;
-        }
-
-        stream >> byte;
-        number.real = static_cast<qint8>(byte-127);
-
-        stream >> byte;
-        number.im = static_cast<qint8>(byte-127);
-
-        byteVector[i] = number;
-
-        i++;
-        locker->unlock();
     }
-    //To shareddata
-    emit(fileEnd());
+    qDebug()<<"";
+    qDebug()<<"";
+    qDebug() << "Out of forever";
     //To main
     emit(finished());
 }

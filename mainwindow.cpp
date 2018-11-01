@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QtMath>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -21,9 +22,11 @@ MainWindow::MainWindow(QWidget *parent) :
     queue = new SharedData;
 
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
+    /*
     connect(worker, SIGNAL(sendQueueElem(QVector <complex>*)),
             queue, SLOT(setQueueElem(QVector<complex>*)));
     connect(worker, SIGNAL(fileEnd()), queue, SLOT(end()));
+    */
     connect(queue, SIGNAL(queueIsReady()), this, SLOT(getSamples()));
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
 }
@@ -60,13 +63,17 @@ void MainWindow::on_startCountingBtn_clicked()
 
     worker->setFilePath(filePath);
     worker->openFile();
+    worker->setQueue(queue);
     worker->moveToThread(thread);
+
     queue->setLength(10);
     thread->start();
 }
 
 void MainWindow::getSamples()
 {
+    qDebug() << "";
+    qDebug() << "IN GET SAMPLES";
     if(queue->tryToLock())
     {
         qDebug() << "Main Thread: " << QThread::currentThread();
@@ -87,6 +94,10 @@ void MainWindow::getSamples()
                 maxSample = qMax(number, maxSample);
                 minSample = qMin(number, minSample);
             }
+
+            qDebug() << "Came to sleep";
+            sleep(2);
+            qDebug() << "PASSED SLEEP";
 
         }
 

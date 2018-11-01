@@ -13,6 +13,7 @@ int SharedData::length() const
 
 QVector<complex> SharedData::getQueueElem()
 {
+    qDebug() << "Queue size IN GETTER" << sampleQueue.size() << " Max size " << m_length;
     return sampleQueue.dequeue();
 }
 
@@ -51,18 +52,20 @@ void SharedData::setLength(int length)
 
 void SharedData::setQueueElem(QVector<complex> *byteVector)
 {
-    QMutexLocker locker(&mutex);
+    mutex.lock();
+
     qDebug() << "Thread in Shared: " << QThread::currentThread();
     sampleQueue.enqueue(*byteVector);
-
-    if(m_length == sampleQueue.size())
-    {
-        mutex.unlock();
-        emit(queueIsReady());
-    }
-}
-
-void SharedData::end()
-{
+    qDebug() << "Queue size in Setter" << sampleQueue.size() << " Max size " << m_length;
+    mutex.unlock();
+    //Don't know another option
+    //That's why, emit()
     emit(queueIsReady());
+
 }
+
+int SharedData::getQueueSize()
+{
+    return sampleQueue.size();
+}
+

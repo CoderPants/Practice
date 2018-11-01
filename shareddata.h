@@ -28,12 +28,15 @@ public:
 
     int length() const;
 
-    QVector <complex> getQueueElem();
-
     bool isEmpty();
+    int getQueueSize();
+
     void lock();
     void unlock();
     bool tryToLock();
+
+    QVector <complex> getQueueElem();
+    void setQueueElem(QVector<complex>*);
 
 signals:
     void lengthChanged(int length);
@@ -42,10 +45,6 @@ signals:
 
 public slots:
     void setLength(int length);
-
-    void setQueueElem(QVector<complex>*);
-
-    void end();
 
 private:
     QQueue <QVector<complex>> sampleQueue;

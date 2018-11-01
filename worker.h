@@ -25,11 +25,11 @@ public:
 
     void openFile();
 
+    void setQueue(SharedData *queue);
+
+    void checkRunning();
+
 signals:
-    void sendQueueElem(QVector <complex>*);
-
-    void fileEnd();
-
     void finished();
 
     void filePathChanged(QString filePath);
@@ -40,7 +40,7 @@ public slots:
     void setFilePath(QString filePath);
 
 private:
-    SharedData *locker;
+    SharedData *queue;
 
     QFile audioFile;
 
@@ -54,7 +54,7 @@ private:
 
     QDataStream stream;
 
-    int i = 0;
+    int i;
 };
 
 #endif // WORKER_H
