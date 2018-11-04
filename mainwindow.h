@@ -40,6 +40,7 @@ private:
     qreal maxSample = 0;
     qreal minSample = 0;
     QString valueStr;
+    const int SAMPLE_BLOCK = 8192;
 };
 
 #endif // MAINWINDOW_H

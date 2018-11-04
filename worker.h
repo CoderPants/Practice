@@ -15,15 +15,12 @@ class Worker : public QObject
     Q_PROPERTY(QString filePath READ filePath WRITE setFilePath NOTIFY filePathChanged)
 
 public:
-    explicit Worker(QObject *parent = nullptr);
+    explicit Worker(QObject *parent = nullptr, const int amount = 0);
     ~Worker();
 
     //Working with file
     QString filePath() const;
     void openFile();
-
-    //Samples
-    const int SAMPLE_BLOCK = 8192;
 
     void setQueue(SharedData *queue);
 
@@ -49,7 +46,8 @@ private:
     QVector <Complex> byteVector;
     SharedData *queue;
 
-    //Counter
+    //Samples
+    const int SAMPLE_BLOCK;
     int i;
 };
 

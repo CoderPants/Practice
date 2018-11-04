@@ -17,10 +17,10 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFixedSize(500,300);
 
     thread = new QThread;
-    worker = new Worker;
+    worker = new Worker(nullptr, SAMPLE_BLOCK);
     queue = new SharedData;
 
-    byteVector.resize(worker->SAMPLE_BLOCK);
+    byteVector.resize(SAMPLE_BLOCK);
 
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
@@ -90,7 +90,7 @@ void MainWindow::getSamples()
             maxSample = number;
             minSample = number;
 
-            for(int i = 1; i < worker->SAMPLE_BLOCK; i++)
+            for(int i = 1; i < SAMPLE_BLOCK; i++)
             {
                 number = qSqrt(byteVector[i].real * byteVector[i].real +
                                byteVector[i].im * byteVector[i].im);

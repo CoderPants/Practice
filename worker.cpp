@@ -4,7 +4,7 @@
 
 #include <unistd.h>
 
-Worker::Worker(QObject *parent) : QObject(parent)
+Worker::Worker(QObject *parent, const int amount) : QObject(parent), SAMPLE_BLOCK(amount)
 {
     byteVector.resize(SAMPLE_BLOCK);
     i = 0;
@@ -45,11 +45,11 @@ void Worker::readingSamples()
             {
                 qDebug() << "\n\nEND OF THE FILE!\n\n";
                 emit(finished());
-                qDebug() << audioFile.pos();
+
                 //Not sure at all
+                qDebug() << audioFile.pos();
                 audioFile.seek(0);
                 qDebug() << audioFile.pos();
-                //break;
             }
 
             if(i == SAMPLE_BLOCK)
