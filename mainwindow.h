@@ -33,7 +33,9 @@ private:
     Worker *worker;
     QThread *thread;
     SharedData *queue;
-    QVector <complex> byteVector;
+
+    //Working with queue elem
+    QVector <Complex> byteVector;
     qreal number = 0;
     qreal maxSample = 0;
     qreal minSample = 0;

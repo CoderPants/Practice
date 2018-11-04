@@ -9,8 +9,6 @@
 
 #include "shareddata.h"
 
-#define sampleBlock 8192
-
 class Worker : public QObject
 {
     Q_OBJECT
@@ -18,16 +16,16 @@ class Worker : public QObject
 
 public:
     explicit Worker(QObject *parent = nullptr);
-
     ~Worker();
 
+    //Working with file
     QString filePath() const;
-
     void openFile();
 
-    void setQueue(SharedData *queue);
+    //Samples
+    const int SAMPLE_BLOCK = 8192;
 
-    void checkRunning();
+    void setQueue(SharedData *queue);
 
 signals:
     void finished();
@@ -40,21 +38,30 @@ public slots:
     void setFilePath(QString filePath);
 
 private:
-    SharedData *queue;
-
+    //File
     QFile audioFile;
-
     QString m_filePath;
-
-    quint8 byte;
-
-    complex number;
-
-    QVector <complex> byteVector;
-
     QDataStream stream;
 
+    //Queue
+    quint8 byte;
+    Complex number;
+    QVector <Complex> byteVector;
+    SharedData *queue;
+
+    //Counter
     int i;
 };
+
+//Realisation of inline
+inline void Worker::setQueue(SharedData *queue)
+{
+    this->queue = queue;
+}
+
+inline QString Worker::filePath() const
+{
+    return m_filePath;
+}
 
 #endif // WORKER_H

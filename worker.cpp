@@ -4,10 +4,9 @@
 
 #include <unistd.h>
 
-
 Worker::Worker(QObject *parent) : QObject(parent)
 {
-    byteVector.resize(sampleBlock);
+    byteVector.resize(SAMPLE_BLOCK);
     i = 0;
 }
 
@@ -15,11 +14,6 @@ Worker::~Worker()
 {
     stream.~QDataStream();
     audioFile.close();
-}
-
-QString Worker::filePath() const
-{
-    return m_filePath;
 }
 
 void Worker::openFile()
@@ -30,11 +24,6 @@ void Worker::openFile()
     stream.setDevice(&audioFile);
     stream.setVersion(QDataStream::Qt_5_11);
     stream.setByteOrder(QDataStream::BigEndian);
-}
-
-void Worker::setQueue(SharedData *queue)
-{
-    this->queue = queue;
 }
 
 void Worker::setFilePath(QString filePath)
@@ -50,20 +39,24 @@ void Worker::readingSamples()
 {
     forever
     {
-        if(queue->getQueueSize() < queue->length())
+        if(queue->notFull())
         {
-            queue->lock();
             if(stream.atEnd())
             {
-                queue->unlock();
-                break;
+                qDebug() << "\n\nEND OF THE FILE!\n\n";
+                emit(finished());
+                qDebug() << audioFile.pos();
+                //Not sure at all
+                audioFile.seek(0);
+                qDebug() << audioFile.pos();
+                //break;
             }
 
-            if(i == sampleBlock)
+            if(i == SAMPLE_BLOCK)
             {
-                qDebug() << "Thread in worker: " << QThread::currentThread() << "i"<<i;
-                queue->unlock();
+                queue->lock();
                 queue->setQueueElem(&byteVector);
+                queue->unlock();
 
                 sleep(1);
                 i = 0;
@@ -78,12 +71,6 @@ void Worker::readingSamples()
             byteVector[i] = number;
 
             i++;
-            queue->unlock();
         }
     }
-    qDebug()<<"";
-    qDebug()<<"";
-    qDebug() << "Out of forever";
-    //To main
-    emit(finished());
 }

@@ -15,26 +15,20 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setFixedSize(500,300);
-    byteVector.resize(sampleBlock);
 
     thread = new QThread;
     worker = new Worker;
     queue = new SharedData;
 
+    byteVector.resize(worker->SAMPLE_BLOCK);
+
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
-    /*
-    connect(worker, SIGNAL(sendQueueElem(QVector <complex>*)),
-            queue, SLOT(setQueueElem(QVector<complex>*)));
-    connect(worker, SIGNAL(fileEnd()), queue, SLOT(end()));
-    */
-    connect(queue, SIGNAL(queueIsReady()), this, SLOT(getSamples()));
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
 {
     qDebug() << "In destructor";
-    //Trying to therminate thread
     thread->quit();
     thread->wait(5000);
     qDebug() << "Thread terminated";
@@ -66,28 +60,37 @@ void MainWindow::on_startCountingBtn_clicked()
     worker->setQueue(queue);
     worker->moveToThread(thread);
 
+    queue->setRunning(true);
     queue->setLength(10);
+
     thread->start();
+
+    //Replacement of signals/slots
+    while(queue->getRunning())
+    {
+        getSamples();
+    }
 }
 
 void MainWindow::getSamples()
 {
-    qDebug() << "";
-    qDebug() << "IN GET SAMPLES";
+    qDebug() << "\nIN GET SAMPLES";
+    sleep(2);
+
     if(queue->tryToLock())
     {
-        qDebug() << "Main Thread: " << QThread::currentThread();
-        while (!queue->isEmpty())
+        if (!queue->isEmpty())
         {
             byteVector = queue->getQueueElem();
 
+            //That's why we're going from the first index
             number = qSqrt(byteVector[0].real * byteVector[0].real +
                            byteVector[0].im * byteVector[0].im);
 
             maxSample = number;
             minSample = number;
 
-            for(int i = 1; i < sampleBlock; i++)
+            for(int i = 1; i < worker->SAMPLE_BLOCK; i++)
             {
                 number = qSqrt(byteVector[i].real * byteVector[i].real +
                                byteVector[i].im * byteVector[i].im);
@@ -95,17 +98,17 @@ void MainWindow::getSamples()
                 minSample = qMin(number, minSample);
             }
 
-            qDebug() << "Came to sleep";
-            sleep(2);
-            qDebug() << "PASSED SLEEP";
+            valueStr.setNum(maxSample);
+            ui->maxValueLabel->setText(valueStr);
 
+            valueStr.setNum(minSample);
+            ui->minValueLabel->setText(valueStr);
         }
-
-        valueStr.setNum(maxSample);
-        ui->maxValueLabel->setText(valueStr);
-
-        valueStr.setNum(minSample);
-        ui->minValueLabel->setText(valueStr);
+        else
+        {
+            qDebug() << "QUEUE IS EMPTY!";
+            queue->setRunning(false);
+        }
 
         queue->unlock();
     }
