@@ -67,10 +67,14 @@ void MainWindow::on_startCountingBtn_clicked()
 
         if(queue->isEmpty())
         {
-            QMessageBox::information(this, "Info", "End of the file!");
             break;
         }
     }
+
+    thread->quit();
+    thread->wait(5000);
+
+    QMessageBox::information(this, "Info", "End of the file!");
 }
 
 void MainWindow::getSamples()
