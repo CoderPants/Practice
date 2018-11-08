@@ -26,10 +26,12 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     qDebug() << "In destructor";
+    worker->setStopThread(true);
     thread->quit();
     thread->wait(5000);
     qDebug() << "Thread terminated";
 
+    delete thread;
     delete queue;
     delete worker;
     delete ui;
@@ -61,30 +63,20 @@ void MainWindow::on_startCountingBtn_clicked()
 
     thread->start();
 
-    forever
-    {
-        getSamples();
 
-        if(queue->isEmpty())
-        {
-            break;
-        }
-    }
-
-    thread->quit();
-    thread->wait(5000);
-
-    QMessageBox::information(this, "Info", "End of the file!");
+    timer.setInterval(2000);
+    connect (&timer, SIGNAL(timeout()), this, SLOT(getSamples()));
+    timer.start();
 }
 
 void MainWindow::getSamples()
 {
     qDebug() << "\nIN GET SAMPLES";
-
-    timer.setInterval(2000);
-    connect (&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
-    timer.start();
-    loop.exec();
+    if(thread->isFinished())
+    {
+        thread->quit();
+        thread->wait(5000);
+    }
 
     if(queue->tryToLock())
     {
@@ -96,8 +88,8 @@ void MainWindow::getSamples()
 
             for(int i = 0; i < SAMPLE_BLOCK; i++)
             {
-                number = 20 * log ( qSqrt(byteVector[i].real * byteVector[i].real +
-                               byteVector[i].im * byteVector[i].im) );
+                number = qSqrt(byteVector[i].real * byteVector[i].real +
+                               byteVector[i].im * byteVector[i].im) ;
 
                 if( i == 0)
                 {
@@ -115,7 +107,13 @@ void MainWindow::getSamples()
             ui->maxValueLabel->setText(valueStr);
 
             valueStr.setNum(minSample);
-            ui->minValueLabel->setText(valueStr);
+            ui->minValueLabel->setText(valueStr);                    
+        }
+        else
+        {
+            queue->unlock();
+            timer.stop();
+            QMessageBox::information(this, "Info", "End of the file!");
         }
     }
     else
@@ -126,20 +124,13 @@ void MainWindow::getSamples()
 
 void MainWindow::on_recurseReadingFlag_stateChanged(int checkFlag)
 {
-    //If checkFlag = true and it still running
+    //If checkFlag = true
     if(checkFlag == 2)
     {
-        /*
-        thread->quit();
-        thread->wait(2000);
-        worker->startOfFile();
-        worker->setRecurse(true);
-        thread->start();
-        */
         worker->setRecurse(true);
     }
 
-    //If checkFlag = false and it still running
+    //If checkFlag = false
     if(checkFlag == 0)
     {
         worker->setRecurse(false);

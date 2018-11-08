@@ -33,6 +33,9 @@ public:
 
     inline bool getRecurse() { return isRecurse; }
 
+    inline void setStopThread(bool flag) { stopThread = flag; }
+
+
 signals:
     void finished();
 
@@ -61,6 +64,7 @@ private:
 
     //Flag
     bool isRecurse;
+    bool stopThread;
 
 };
 

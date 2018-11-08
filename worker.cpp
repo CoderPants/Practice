@@ -8,6 +8,7 @@ Worker::Worker(QObject *parent, const int amount) : QObject(parent), sampleBlock
 {
     byteVector.resize(sampleBlock);
     isRecurse = false;
+    stopThread = false;
     i = 0;
 }
 
@@ -49,6 +50,11 @@ void Worker::readingSamples()
 {
     forever
     {
+        if(stopThread)
+        {
+            break;
+        }
+
         if(queue->notFull())
         {
             //Collecting sample block

@@ -5,7 +5,6 @@
 #include "shareddata.h"
 
 #include <QMainWindow>
-#include <QEventLoop>
 #include <QThread>
 #include <QVector>
 #include <QQueue>
@@ -40,14 +39,13 @@ private:
 
     //Working with queue elem
     QVector <Complex> byteVector;
-    qreal number = 0;
-    qreal maxSample = 0;
-    qreal minSample = 0;
+    qreal number;
+    qreal maxSample;
+    qreal minSample;
     QString valueStr;
     const int SAMPLE_BLOCK = 8192;
 
     //For thread freezing
-    QEventLoop loop;
     QTimer timer;
 };
 
