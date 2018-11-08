@@ -5,6 +5,11 @@ SharedData::SharedData(QObject *parent) : QObject(parent)
 
 }
 
+SharedData::~SharedData()
+{
+
+}
+
 void SharedData::setLength(int length)
 {
     if (m_length == length)

@@ -1,13 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <unistd.h>
-
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDebug>
 #include <QtMath>
-#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -60,22 +57,30 @@ void MainWindow::on_startCountingBtn_clicked()
     worker->setQueue(queue);
     worker->moveToThread(thread);
 
-    queue->setRunning(true);
     queue->setLength(10);
 
     thread->start();
 
-    //Replacement of signals/slots
-    while(queue->getRunning())
+    forever
     {
         getSamples();
+
+        if(queue->isEmpty())
+        {
+            QMessageBox::information(this, "Info", "End of the file!");
+            break;
+        }
     }
 }
 
 void MainWindow::getSamples()
 {
     qDebug() << "\nIN GET SAMPLES";
-    sleep(2);
+
+    timer.setInterval(2000);
+    connect (&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
+    timer.start();
+    loop.exec();
 
     if(queue->tryToLock())
     {
@@ -83,19 +88,23 @@ void MainWindow::getSamples()
         {
             byteVector = queue->getQueueElem();
 
-            //That's why we're going from the first index
-            number = qSqrt(byteVector[0].real * byteVector[0].real +
-                           byteVector[0].im * byteVector[0].im);
+            queue->unlock();
 
-            maxSample = number;
-            minSample = number;
-
-            for(int i = 1; i < SAMPLE_BLOCK; i++)
+            for(int i = 0; i < SAMPLE_BLOCK; i++)
             {
-                number = qSqrt(byteVector[i].real * byteVector[i].real +
-                               byteVector[i].im * byteVector[i].im);
-                maxSample = qMax(number, maxSample);
-                minSample = qMin(number, minSample);
+                number = 20 * log ( qSqrt(byteVector[i].real * byteVector[i].real +
+                               byteVector[i].im * byteVector[i].im) );
+
+                if( i == 0)
+                {
+                    maxSample = number;
+                    minSample = number;
+                }
+                else
+                {
+                    maxSample = qMax(number, maxSample);
+                    minSample = qMin(number, minSample);
+                }
             }
 
             valueStr.setNum(maxSample);
@@ -104,16 +113,31 @@ void MainWindow::getSamples()
             valueStr.setNum(minSample);
             ui->minValueLabel->setText(valueStr);
         }
-        else
-        {
-            qDebug() << "QUEUE IS EMPTY!";
-            queue->setRunning(false);
-        }
-
-        queue->unlock();
     }
     else
     {
         qDebug() << "Didn't lock!";
+    }
+}
+
+void MainWindow::on_recurseReadingFlag_stateChanged(int checkFlag)
+{
+    //If checkFlag = true and it still running
+    if(checkFlag == 2)
+    {
+        /*
+        thread->quit();
+        thread->wait(2000);
+        worker->startOfFile();
+        worker->setRecurse(true);
+        thread->start();
+        */
+        worker->setRecurse(true);
+    }
+
+    //If checkFlag = false and it still running
+    if(checkFlag == 0)
+    {
+        worker->setRecurse(false);
     }
 }

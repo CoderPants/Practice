@@ -5,9 +5,11 @@
 #include "shareddata.h"
 
 #include <QMainWindow>
+#include <QEventLoop>
 #include <QThread>
 #include <QVector>
 #include <QQueue>
+#include <QTimer>
 
 namespace Ui {
 class MainWindow;
@@ -28,6 +30,8 @@ private slots:
 
     void getSamples();
 
+    void on_recurseReadingFlag_stateChanged(int checkFlag);
+
 private:
     Ui::MainWindow *ui;
     Worker *worker;
@@ -41,6 +45,10 @@ private:
     qreal minSample = 0;
     QString valueStr;
     const int SAMPLE_BLOCK = 8192;
+
+    //For thread freezing
+    QEventLoop loop;
+    QTimer timer;
 };
 
 #endif // MAINWINDOW_H

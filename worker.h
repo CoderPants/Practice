@@ -3,8 +3,8 @@
 
 #include <QDataStream>
 #include <QObject>
-#include <QQueue>
 #include <QVector>
+#include <QQueue>
 #include <QFile>
 
 #include "shareddata.h"
@@ -19,10 +19,19 @@ public:
     ~Worker();
 
     //Working with file
-    QString filePath() const;
+    inline QString filePath() const { return m_filePath; }
+
+    inline void startOfFile() { audioFile.seek(0); }
+
     void openFile();
 
-    void setQueue(SharedData *queue);
+    //Queue elem
+    inline void setQueue(SharedData *queue) { this->queue = queue; }
+
+    //Flag
+    inline void setRecurse(bool flag) { isRecurse = flag; }
+
+    inline bool getRecurse() { return isRecurse; }
 
 signals:
     void finished();
@@ -47,19 +56,12 @@ private:
     SharedData *queue;
 
     //Samples
-    const int SAMPLE_BLOCK;
+    int sampleBlock;
     int i;
+
+    //Flag
+    bool isRecurse;
+
 };
-
-//Realisation of inline
-inline void Worker::setQueue(SharedData *queue)
-{
-    this->queue = queue;
-}
-
-inline QString Worker::filePath() const
-{
-    return m_filePath;
-}
 
 #endif // WORKER_H

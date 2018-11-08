@@ -23,25 +23,27 @@ class SharedData : public QObject
 
 public:
     explicit SharedData(QObject *parent = nullptr);
+    ~SharedData();
 
     //Length of queue
-    int length() const;
-    bool isEmpty();
-    bool notFull();
-    int getQueueSize();
+    inline int length() const { return m_length; }
+
+    inline bool isEmpty() { return sampleQueue.isEmpty(); }
+
+    inline int getQueueSize() { return sampleQueue.size(); }
+
+    inline bool notFull() { return sampleQueue.size() < m_length ? true : false; }
 
     //Mutex
-    void lock();
-    void unlock();
-    bool tryToLock();
+    inline void lock() { mutex.lock(); }
+
+    inline void unlock() { mutex.unlock(); }
+
+    inline bool tryToLock() { return mutex.try_lock(); }
 
     //Elements
     QVector <Complex> getQueueElem();
     void setQueueElem(QVector<Complex>*);
-
-    //Flag for reading
-    bool getRunning() const;
-    void setRunning(bool value);
 
 signals:
     void lengthChanged(int length);
@@ -54,59 +56,6 @@ public slots:
 private:
     QQueue <QVector<Complex>> sampleQueue;
     QMutex mutex;
-    bool running;
 };
-
-//Realisation of inline
-//Mutex
-inline void SharedData::lock()
-{
-    mutex.lock();
-}
-
-inline void SharedData::unlock()
-{
-    mutex.unlock();
-}
-
-inline bool SharedData::tryToLock()
-{
-    return mutex.try_lock();
-}
-
-
-//Length of queue
-inline int SharedData::getQueueSize()
-{
-    return sampleQueue.size();
-}
-
-inline int SharedData::length() const
-{
-    return m_length;
-}
-
-inline bool SharedData::isEmpty()
-{
-    return sampleQueue.isEmpty();
-}
-
-inline bool SharedData::notFull()
-{
-    return sampleQueue.size() < m_length ? true : false;
-}
-
-
-//Flag
-inline void SharedData::setRunning(bool value)
-{
-    running = value;
-}
-
-inline bool SharedData::getRunning() const
-{
-    return running;
-}
-
 
 #endif // SHAREDDATA_H
