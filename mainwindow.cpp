@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     reChart = new QtCharts::QChart();
     reChart->addSeries(reSeries);
-    reChart->setTitle("Oscillogram real");
+    //reChart->setTitle("Oscillogram real");
     reChart->setAnimationOptions(QChart::SeriesAnimations);
     reChart->legend()->hide();
     reChart->createDefaultAxes();
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     imChart = new QtCharts::QChart();
     imChart->addSeries(imSeries);
-    imChart->setTitle("Oscillogram imaginary");
+    //imChart->setTitle("Oscillogram imaginary");
     imChart->setAnimationOptions(QChart::SeriesAnimations);
     imChart->legend()->hide();
     imChart->createDefaultAxes();
@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     specChart = new QtCharts::QChart();
     specChart->addSeries(specSeries);
-    specChart->setTitle("Spectrum");
+    //specChart->setTitle("Spectrum");
     specChart->setAnimationOptions(QChart::SeriesAnimations);
     specChart->legend()->hide();
     specChart->createDefaultAxes();
