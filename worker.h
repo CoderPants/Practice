@@ -66,6 +66,9 @@ private:
     bool isRecurse;
     bool stopThread;
 
+    //Const for sleep()
+    const quint32 SLEEP_TIME = 1;
+
 };
 
 #endif // WORKER_H

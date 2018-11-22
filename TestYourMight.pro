@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets charts datavisualization
 
 TARGET = TestYourMight
 TEMPLATE = app
@@ -35,6 +35,9 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui
+
+#Including fast fourier
+LIBS += /usr/local/lib/libfftw3.a
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
