@@ -126,6 +126,15 @@ MainWindow::MainWindow(QWidget *parent) :
     minSpecSample = 99999;
     specYAxis->setRange(minSpecSample, maxSpecSample);
 
+    //Fps
+    fpsCount = 0;
+    fps = 0;
+
+    //Status bar
+    QFont serifFont("Times", 15, QFont::Bold);
+    ui->statusBar->setFont(serifFont);
+    ui->statusBar->showMessage("FPS  0");
+
     //Threads
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
@@ -230,6 +239,17 @@ void MainWindow::drawGraphs()
     }
 
     specChartView->repaint();
+
+    fpsCount++;
+
+    elapsed = m_fpsTimer.elapsed();
+    if(elapsed >= 1000)
+    {
+        elapsed = m_fpsTimer.restart();
+        fps = qreal(0.1 * int(10000.0 * (qreal(fpsCount) / qreal(elapsed))));
+        ui->statusBar->showMessage("FPS " + QString::number(fps, 'f', 1));
+        fpsCount = 0;
+    }
 }
 
 void MainWindow::on_loadFileBtn_clicked()
@@ -261,6 +281,8 @@ void MainWindow::on_startCountingBtn_clicked()
     timer.setInterval(WAIT_TIME);
     connect (&timer, SIGNAL(timeout()), this, SLOT(getSamples()));
     timer.start();
+
+    m_fpsTimer.start();
 }
 
 void MainWindow::getSamples()

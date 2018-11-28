@@ -77,7 +77,7 @@ private:
     bool stopThread;
 
     //Const for sleep()
-    const quint32 SLEEP_TIME = 1;
+    const quint32 SLEEP_TIME = 20;
 
 };
 

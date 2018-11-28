@@ -15,9 +15,8 @@
 #include <QThread>
 #include <QVector>
 #include <QQueue>
-#include <QTimer>
-#include <QTime>
-
+#include <QtCore/QTimer>
+#include <QtCore/QElapsedTimer>
 
 
 namespace Ui {
@@ -93,7 +92,7 @@ private:
     QTimer timer;
 
     //Const for Timer
-    const int WAIT_TIME = 2000;
+    const int WAIT_TIME = 40;
 
     //Const for wait()
     const quint32 WORKING_TIME = 5000;
@@ -103,6 +102,12 @@ private:
 
     //Dots vectors
     QVector <QPointF> imVector, reVector, specVector;
+
+    //Fps count
+    QElapsedTimer m_fpsTimer;
+    qint64 elapsed;
+    int fpsCount;
+    qreal fps;
 
 };
 

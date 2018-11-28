@@ -118,7 +118,7 @@ void Worker::readingSamples()
                 }
             }
 
-            sleep(SLEEP_TIME);
+            usleep(SLEEP_TIME);
 
         }
     }
