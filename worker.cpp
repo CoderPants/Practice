@@ -10,10 +10,18 @@ Worker::Worker(QObject *parent, const int amount) : QObject(parent), sampleBlock
     isRecurse = false;
     stopThread = false;
     i = 0;
+
+    //FFTW
+    specSamples = new double[sampleBlock];
+    complexSpec =
+            (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (sampleBlock*2));
 }
 
 Worker::~Worker()
 {
+    delete [] specSamples;
+    fftw_free(complexSpec);
+
     stream.~QDataStream();
     audioFile.close();
 }
@@ -37,6 +45,26 @@ void Worker::openFile()
     }
 }
 
+void Worker::calcFFTW()
+{
+    for(int i = 0; i < sampleBlock; i++)
+    {
+        complexSpec[i][0] = byteVector[i].real;
+        complexSpec[i][1] = byteVector[i].im;
+    }
+
+    plan_forward = fftw_plan_dft_c2r_1d (sampleBlock, complexSpec,
+                                          specSamples, FFTW_ESTIMATE);
+
+    fftw_execute (plan_forward);
+    fftw_destroy_plan(plan_forward);
+
+    for(int i = 0; i < sampleBlock; i++)
+    {
+        byteVector[i].fftw = specSamples[i];
+    }
+}
+
 void Worker::setFilePath(QString filePath)
 {
     if (m_filePath == filePath)
@@ -57,7 +85,7 @@ void Worker::readingSamples()
 
         if(queue->notFull())
         {
-            //Collecting sample block
+            //Collecting sample block of real and imaginary
             for( i = 0; i < sampleBlock && !stream.atEnd(); i++)
             {
                 stream >> byte;
@@ -68,6 +96,9 @@ void Worker::readingSamples()
 
                 byteVector[i] = number;
             }
+
+            //Collecting fftw samples
+            calcFFTW();
 
             queue->lock();
             queue->setQueueElem(&byteVector);

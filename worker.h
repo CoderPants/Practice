@@ -1,6 +1,8 @@
 #ifndef WORKER_H
 #define WORKER_H
 
+#include <fftw3.h>
+
 #include <QDataStream>
 #include <QObject>
 #include <QVector>
@@ -35,6 +37,9 @@ public:
 
     inline void setStopThread(bool flag) { stopThread = flag; }
 
+    //FFTW
+    void calcFFTW();
+
 
 signals:
     void finished();
@@ -51,6 +56,11 @@ private:
     QFile audioFile;
     QString m_filePath;
     QDataStream stream;
+
+    //FFTW
+    double *specSamples;
+    fftw_plan plan_forward;
+    fftw_complex *complexSpec;
 
     //Queue
     quint8 byte;

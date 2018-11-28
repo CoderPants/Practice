@@ -2,7 +2,7 @@
 
 SharedData::SharedData(QObject *parent) : QObject(parent)
 {
-
+    m_length = 0;
 }
 
 SharedData::~SharedData()

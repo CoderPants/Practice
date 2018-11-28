@@ -11,6 +11,7 @@ typedef struct Complex
 {
     qint8 real;
     qint8 im;
+    double fftw;
 } Complex;
 
 

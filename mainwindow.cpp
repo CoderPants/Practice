@@ -1,10 +1,14 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "chrono"
+
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDebug>
-#include <QtMath>
+
+using namespace std::chrono;
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -23,16 +27,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Real part graph creation
     reSeries = new QLineSeries();
-
     reChart = new QtCharts::QChart();
-    reChart->addSeries(reSeries);
-    //reChart->setTitle("Oscillogram real");
-    reChart->setAnimationOptions(QChart::SeriesAnimations);
-    reChart->legend()->hide();
-    reChart->createDefaultAxes();
 
-    reChart->axisX(reSeries)->setMin(0);
-    reChart->axisX(reSeries)->setMax(SAMPLE_BLOCK);
+    reXAxis = new QValueAxis();
+    reYAxis = new QValueAxis();
+
+    reChart->addSeries(reSeries);
+    reSeries->setUseOpenGL(true);
+    reChart->legend()->hide();
+    reChart->setAxisX(reXAxis, reSeries);
+    reChart->setAxisY(reYAxis, reSeries);
 
     reChart->setTheme(QChart::ChartThemeDark) ;
 
@@ -42,16 +46,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Imaginary part graph creation
     imSeries = new QLineSeries();
-
     imChart = new QtCharts::QChart();
-    imChart->addSeries(imSeries);
-    //imChart->setTitle("Oscillogram imaginary");
-    imChart->setAnimationOptions(QChart::SeriesAnimations);
-    imChart->legend()->hide();
-    imChart->createDefaultAxes();
 
-    imChart->axisX(imSeries)->setMin(0);
-    imChart->axisX(imSeries)->setMax(SAMPLE_BLOCK);
+    imXAxis = new QValueAxis();
+    imYAxis = new QValueAxis();
+
+    imChart->addSeries(imSeries);
+    imSeries->setUseOpenGL(true);
+    imChart->legend()->hide();
+    imChart->setAxisX(imXAxis, imSeries);
+    imChart->setAxisY(imYAxis, imSeries);
 
     imChart->setTheme(QChart::ChartThemeDark) ;
 
@@ -63,16 +67,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Spectrum graph creation
     specSeries = new QLineSeries();
-
     specChart = new QtCharts::QChart();
-    specChart->addSeries(specSeries);
-    //specChart->setTitle("Spectrum");
-    specChart->setAnimationOptions(QChart::SeriesAnimations);
-    specChart->legend()->hide();
-    specChart->createDefaultAxes();
 
-    specChart->axisX(specSeries)->setMin(0);
-    specChart->axisX(specSeries)->setMax(SAMPLE_BLOCK);
+    specXAxis = new QValueAxis();
+    specYAxis = new QValueAxis();
+
+    specChart->addSeries(specSeries);
+    specSeries->setUseOpenGL(true);
+    specChart->legend()->hide();
+    specChart->setAxisX(specXAxis, specSeries);
+    specChart->setAxisY(specYAxis, specSeries);
 
     specChart->setTheme(QChart::ChartThemeDark) ;
 
@@ -96,12 +100,31 @@ MainWindow::MainWindow(QWidget *parent) :
     worker = new Worker(nullptr, SAMPLE_BLOCK);
     queue = new SharedData;
 
+    //Vector of samples
     byteVector.resize(SAMPLE_BLOCK);
 
-    //For graph
-    samples = new double[SAMPLE_BLOCK];
-    complexSpec =
-            (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (SAMPLE_BLOCK*2));
+    //Vectors of dots
+    imVector.resize(SAMPLE_BLOCK);
+    reVector.resize(SAMPLE_BLOCK);
+    specVector.resize(SAMPLE_BLOCK);
+
+    //Max and min for xAxis
+    reXAxis->setRange(0, SAMPLE_BLOCK);
+    imXAxis->setRange(0, SAMPLE_BLOCK);
+    specXAxis->setRange(0, SAMPLE_BLOCK);
+
+    //Max and min for yAxis
+    maxReSample = -127;
+    minReSample = 127;
+    reYAxis->setRange(minReSample, maxReSample);
+
+    maxImSample = -127;
+    minImSample = 127;
+    imYAxis->setRange(minImSample, maxImSample);
+
+    maxSpecSample = -99999;
+    minSpecSample = 99999;
+    specYAxis->setRange(minSpecSample, maxSpecSample);
 
     //Threads
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
@@ -135,108 +158,79 @@ MainWindow::~MainWindow()
     delete specChart;
     delete  specChartView;
 
-    delete [] samples;
-    fftw_free(complexSpec);
-
     delete ui;
 }
 
-void MainWindow::drawOscillogram(QVector <Complex> *byteVector)
+void MainWindow::fullDots()
+{
+    for(int i = 0; i < SAMPLE_BLOCK; i++)
+    {
+        //real
+        reVector[i].setX(i); reVector[i].setY(byteVector[i].real);
+        //imaginary
+        imVector[i].setX(i); imVector[i].setY(byteVector[i].im);
+        //spectrum
+        specVector[i].setX(i); specVector[i].setY(byteVector[i].fftw);
+    }
+}
+
+void MainWindow::drawGraphs()
 {
     reSeries->clear();
-
-    for(int i = 0; i < SAMPLE_BLOCK; i++)
-    {
-        QPointF dot(i, (*byteVector)[i].real);
-        *reSeries << dot;
-
-        if(i == 0)
-        {
-            maxSample = (*byteVector)[i].real;
-            minSample = (*byteVector)[i].real;
-        }
-        else
-        {
-            maxSample = qMax(maxSample, (*byteVector)[i].real);
-            minSample = qMin(minSample, (*byteVector)[i].real);
-        }
-    }
-
-    reChart->axisY(reSeries)->setMin(minSample - 2);
-    reChart->axisY(reSeries)->setMax(maxSample + 2);
-
-    reChartView->update();
-
     imSeries->clear();
-
-    for(int i = 0; i < SAMPLE_BLOCK; i++)
-    {
-        QPointF dot(i, (*byteVector)[i].im);
-        *imSeries << dot;
-
-        if(i == 0)
-        {
-            maxSample = (*byteVector)[i].im;
-            minSample = (*byteVector)[i].im;
-        }
-        else
-        {
-            maxSample = qMax(maxSample, (*byteVector)[i].im);
-            minSample = qMin(minSample, (*byteVector)[i].im);
-        }
-    }
-
-    imChart->axisY(imSeries)->setMin(minSample - 2);
-    imChart->axisY(imSeries)->setMax(maxSample + 2);
-
-    imChartView->update();
-}
-
-void MainWindow::calcFFTW(QVector<Complex> *byteVector)
-{
-    for(int i = 0; i < SAMPLE_BLOCK; i++)
-    {
-        complexSpec[i][0] = (*byteVector)[i].real;
-        complexSpec[i][1] = (*byteVector)[i].im;
-    }
-
-    plan_forward = fftw_plan_dft_c2r_1d (SAMPLE_BLOCK, complexSpec,
-                                          samples, FFTW_ESTIMATE);
-
-    fftw_execute (plan_forward);
-    fftw_destroy_plan(plan_forward);
-}
-
-
-void MainWindow::drawSpectrum()
-{
     specSeries->clear();
 
+    reSeries->replace(reVector);
+    imSeries->replace(imVector);
+    specSeries->replace(specVector);
+
     for(int i = 0; i < SAMPLE_BLOCK; i++)
     {
-        QPointF dot(i, samples[i]);
-        *specSeries << dot;
-
-        if(i == 0)
-        {
-            maxSpecSample = samples[i];
-            minSpecSample = samples[i];
-        }
-        else
-        {
-            maxSpecSample = qMax(maxSpecSample, samples[i]);
-            minSpecSample = qMin(minSpecSample, samples[i]);
-        }
+        //real
+        maxReSample = qMax(maxReSample, byteVector[i].real);
+        minReSample = qMin(minReSample, byteVector[i].real);
+        //imaginary
+        maxImSample = qMax(maxImSample, byteVector[i].im);
+        minImSample = qMin(minImSample, byteVector[i].im);
+        //spectrum
+        maxSpecSample = qMax(maxSpecSample, byteVector[i].fftw);
+        minSpecSample = qMin(minSpecSample, byteVector[i].fftw);
     }
 
-    specChart->axisY(specSeries)->setMax(maxSpecSample);
-    specChart->axisY(specSeries)->setMin(minSpecSample);
+    //Checking if max/min was changed
+    if(reYAxis->min() > minReSample)
+    {
+        reYAxis->setMin(minReSample - INDENT);
+    }
+    if(reYAxis->max() < maxReSample)
+    {
+        reYAxis->setMax(maxReSample + INDENT);
+    }
 
-    specChart->update();
+    reChartView->repaint();
 
+    if(imYAxis->min() > minImSample)
+    {
+        imYAxis->setMin(minImSample - INDENT);
+    }
+    if(imYAxis->max() < maxImSample)
+    {
+        imYAxis->setMax(maxImSample + INDENT);
+    }
+
+    imChartView->repaint();
+
+    if(specYAxis->min() > minSpecSample)
+    {
+        specYAxis->setMin(minSpecSample - INDENT);
+    }
+    if(specYAxis->max() < maxSpecSample)
+    {
+        specYAxis->setMax(maxSpecSample + INDENT);
+    }
+
+    specChartView->repaint();
 }
-
-
 
 void MainWindow::on_loadFileBtn_clicked()
 {
@@ -285,9 +279,11 @@ void MainWindow::getSamples()
             byteVector = queue->getQueueElem();
             queue->unlock();
 
-            drawOscillogram(&byteVector);
-            calcFFTW(&byteVector);
-            drawSpectrum();
+            auto start = steady_clock::now();
+            fullDots();
+            drawGraphs();
+            auto end = steady_clock::now();
+            qDebug() << duration_cast<milliseconds>(end - start).count();
         }
         else
         {
