@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setMinimumSize(1280, 520);
+    this->setFixedSize(1200, 710);
 
     //App color
     QPalette Pal(palette());
@@ -72,11 +72,40 @@ MainWindow::MainWindow(QWidget *parent) :
     specXAxis = new QValueAxis();
     specYAxis = new QValueAxis();
 
+    //Fiter for spectrum
+    topLine = new QLineSeries();
+    bottomLine = new QLineSeries();
+
+    startT = new QPointF();
+    endT = new QPointF();
+
+    startB = new QPointF();
+    endB = new QPointF();
+
+    startT->setX(0);
+    endT->setX(SAMPLE_BLOCK);
+
+    startB->setX(0);
+    endB->setX(SAMPLE_BLOCK);
+
     specChart->addSeries(specSeries);
+    specChart->addSeries(topLine);
+    specChart->addSeries(bottomLine);
+
     specSeries->setUseOpenGL(true);
+    topLine->setUseOpenGL(true);
+    bottomLine->setUseOpenGL(true);
+
     specChart->legend()->hide();
+
     specChart->setAxisX(specXAxis, specSeries);
     specChart->setAxisY(specYAxis, specSeries);
+
+    specChart->setAxisX(specXAxis, topLine);
+    specChart->setAxisY(specYAxis, topLine);
+
+    specChart->setAxisX(specXAxis, bottomLine);
+    specChart->setAxisY(specYAxis, bottomLine);
 
     specChart->setTheme(QChart::ChartThemeDark) ;
 
@@ -85,6 +114,8 @@ MainWindow::MainWindow(QWidget *parent) :
     specChartView->setRubberBand(QChartView::HorizontalRubberBand);
 
     specSeries->setColor(QColor(0, 0, 255, 150));
+    topLine->setColor(QColor(255, 255, 240, 150));
+    bottomLine->setColor(QColor(255, 255, 240, 150));
 
     //Adding to the vertical box layout
     areaForWidget = new QVBoxLayout();
@@ -135,6 +166,30 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusBar->setFont(serifFont);
     ui->statusBar->showMessage("FPS  0");
 
+    //Spinbox
+    ui->topSpinBox->setMaximum(10000);
+    ui->topSpinBox->setMinimum(0);
+
+    ui->bottomSpinBox->setMaximum(0);
+    ui->bottomSpinBox->setMinimum(-10000);
+
+    //WaterFall graph
+    widthWf = ui->waterFallLabel->width();
+    heightWf = ui->waterFallLabel->height();
+
+    waterFall = new QImage(widthWf, heightWf, QImage::Format_RGB32);
+    ui->waterFallLabel->setPixmap(QPixmap::fromImage(*waterFall));
+
+    averageColor = new QColor(0, 0, 0);
+    topColor = new QColor(255, 255, 240);
+    bottomColor = new QColor(255, 0, 0);
+
+    pixelLine = 0;
+
+    //Filters for the waterfall
+    topFilter = 0.0;
+    bottomFilter = 0.0;
+
     //Threads
     connect(thread, SIGNAL(started()), worker, SLOT(readingSamples()));
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
@@ -153,19 +208,37 @@ MainWindow::~MainWindow()
     delete worker;
 
     reChart->removeSeries(reSeries);
-    delete  reSeries;
+    delete reXAxis;
+    delete reYAxis;
+    delete reSeries;
     delete reChart;
-    delete  reChartView;
+    delete reChartView;
 
     imChart->removeSeries(imSeries);
-    delete  imSeries;
+    delete imXAxis;
+    delete imYAxis;
+    delete imSeries;
     delete imChart;
-    delete  imChartView;
+    delete imChartView;
 
     specChart->removeSeries(specSeries);
-    delete  specSeries;
+    specChart->removeSeries(topLine);
+    specChart->removeSeries(bottomLine);
+    delete specXAxis;
+    delete specYAxis;
+    delete startT;
+    delete endT;
+    delete startB;
+    delete endB;
+    delete specSeries;
+    delete topLine;
+    delete bottomLine;
     delete specChart;
-    delete  specChartView;
+    delete specChartView;
+
+    delete areaForWidget;
+
+    delete waterFall;
 
     delete ui;
 }
@@ -183,6 +256,90 @@ void MainWindow::fullDots()
     }
 }
 
+//Drawing 2 lines for filters
+//Top and bottom one
+//If it changes, redrew it
+//Don't know, how to use qline, that's why - series
+void MainWindow::drawFilters()
+{
+    if(fabs(startT->y() - topFilter) > std::numeric_limits<double>::epsilon())
+    {
+        topLine->clear();
+        startT->setY(topFilter);
+        endT->setY(topFilter);
+        *topLine << *startT << *endT;
+    }
+
+    if(fabs(startB->y() - bottomFilter) > std::numeric_limits<double>::epsilon())
+    {
+        bottomLine->clear();
+        startB->setY(bottomFilter);
+        endB->setY(bottomFilter);
+        *bottomLine << *startB << *endB;
+    }
+
+}
+
+//Drawing waterfall
+//Using lines of 5 pixels (looks like bad coding)
+//Checking for the same color, and for the unchanged filters
+//If in the middle of the filters -> black color
+//If above topFilter -> white color
+//If below bottomFilter -> red color
+//Drawing till the end of the label
+//then, zero iterator
+void MainWindow::drawWaterfall()
+{
+    for(int i = 0; i < SAMPLE_BLOCK; i++)
+    {
+        if(byteVector[i].fftw < topFilter && byteVector[i].fftw > bottomFilter
+                && waterFall->pixel(i/REDUCTION, pixelLine) != averageColor->rgb())
+        {
+            waterFall->setPixel(i/REDUCTION, pixelLine,   averageColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+1, averageColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+2, averageColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+3, averageColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+4, averageColor->rgb());
+        }
+
+        if(byteVector[i].fftw >= topFilter &&
+                waterFall->pixel(i/REDUCTION, pixelLine) != topColor->rgb() &&
+                fabs(topFilter) >= std::numeric_limits<double>::epsilon())
+        {
+            //purple
+            //waterFallColor = qRgb(172, 73, 245);
+            waterFall->setPixel(i/REDUCTION, pixelLine,   topColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+1, topColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+2, topColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+3, topColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+4, topColor->rgb());
+        }
+
+        if(byteVector[i].fftw <= bottomFilter &&
+                waterFall->pixel(i/REDUCTION, pixelLine) != bottomColor->rgb() &&
+                fabs(bottomFilter) >= std::numeric_limits<double>::epsilon())
+        {
+            //dark green
+            //waterFallColor = qRgb(46, 139, 87);
+            waterFall->setPixel(i/REDUCTION, pixelLine,   bottomColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+1, bottomColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+2, bottomColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+3, bottomColor->rgb());
+            waterFall->setPixel(i/REDUCTION, pixelLine+4, bottomColor->rgb());
+        }
+    }
+
+    ui->waterFallLabel->setPixmap(QPixmap::fromImage(*waterFall));
+
+    pixelLine += pixelStep;
+
+    if(pixelLine == heightWf)
+    {
+        pixelLine = 0;
+    }
+
+}
+
 void MainWindow::drawGraphs()
 {
     reSeries->clear();
@@ -192,6 +349,9 @@ void MainWindow::drawGraphs()
     reSeries->replace(reVector);
     imSeries->replace(imVector);
     specSeries->replace(specVector);
+
+    //Filter lines
+    drawFilters();
 
     for(int i = 0; i < SAMPLE_BLOCK; i++)
     {
@@ -216,7 +376,8 @@ void MainWindow::drawGraphs()
         reYAxis->setMax(maxReSample + INDENT);
     }
 
-    reChartView->repaint();
+    //Update faster, then repaint
+    reChartView->update();
 
     if(imYAxis->min() > minImSample)
     {
@@ -227,7 +388,7 @@ void MainWindow::drawGraphs()
         imYAxis->setMax(maxImSample + INDENT);
     }
 
-    imChartView->repaint();
+    imChartView->update();
 
     if(specYAxis->min() > minSpecSample)
     {
@@ -238,10 +399,12 @@ void MainWindow::drawGraphs()
         specYAxis->setMax(maxSpecSample + INDENT);
     }
 
-    specChartView->repaint();
+    specChartView->update();
 
+    //Fps counting
     fpsCount++;
 
+    //Fps printing
     elapsed = m_fpsTimer.elapsed();
     if(elapsed >= 1000)
     {
@@ -304,6 +467,10 @@ void MainWindow::getSamples()
             auto start = steady_clock::now();
             fullDots();
             drawGraphs();
+            if(fabs(topFilter - bottomFilter) >= std::numeric_limits<double>::epsilon())
+            {
+                drawWaterfall();
+            }
             auto end = steady_clock::now();
             qDebug() << duration_cast<milliseconds>(end - start).count();
         }
@@ -334,3 +501,14 @@ void MainWindow::on_recurseReadingFlag_stateChanged(int checkFlag)
         worker->setRecurse(false);
     }
 }
+
+void MainWindow::on_topSpinBox_valueChanged(double topDot)
+{
+    topFilter = topDot;
+}
+
+void MainWindow::on_bottomSpinBox_valueChanged(double bottomDot)
+{
+    bottomFilter = bottomDot;
+}
+

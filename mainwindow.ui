@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>581</height>
+    <height>681</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,17 +16,23 @@
   <widget class="QWidget" name="centralWidget">
    <property name="minimumSize">
     <size>
-     <width>1280</width>
-     <height>520</height>
+     <width>1172</width>
+     <height>620</height>
     </size>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout">
+     <layout class="QVBoxLayout" name="verticalFileLayout">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QHBoxLayout" name="horizontalLoadFileLayout">
         <item>
          <widget class="QPushButton" name="loadFileBtn">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
           <property name="palette">
            <palette>
             <active>
@@ -209,12 +215,25 @@ color : rgb(255,255,240);</string>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="filePathLine"/>
+         <widget class="QLineEdit" name="filePathLine">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
       <item>
        <widget class="QPushButton" name="startCountingBtn">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>19</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">background-color: rgb(100,100,100);
 color : rgb(255,255,240);</string>
@@ -224,8 +243,24 @@ color : rgb(255,255,240);</string>
         </property>
        </widget>
       </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalFiltersLayout">
       <item>
        <widget class="QCheckBox" name="recurseReadingFlag">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>19</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">background-color: rgb(100,100,100);
 color : rgb(255,255,240);</string>
@@ -235,16 +270,99 @@ color : rgb(255,255,240);</string>
         </property>
        </widget>
       </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalTopFilterLayout">
+        <item>
+         <widget class="QLabel" name="topBrdLable">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(50,50,50);
+color : rgb(255,255,240);</string>
+          </property>
+          <property name="text">
+           <string>Top border</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="topSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(50,50,50);
+color : rgb(255,255,240);</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalBottomFilterLayout">
+        <item>
+         <widget class="QLabel" name="bottomBrdLable">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(50,50,50);
+color : rgb(255,255,240);</string>
+          </property>
+          <property name="text">
+           <string>Bottom border</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="bottomSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(50,50,50);
+color : rgb(255,255,240);</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QVBoxLayout" name="verticalGraphLayout">
+      <item>
+       <widget class="QLabel" name="waterFallLabel">
+        <property name="minimumSize">
+         <size>
+          <width>1172</width>
+          <height>80</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QWidget" name="magnitudeGraph" native="true">
         <property name="minimumSize">
          <size>
-          <width>800</width>
-          <height>200</height>
+          <width>1172</width>
+          <height>400</height>
          </size>
         </property>
         <property name="layoutDirection">
