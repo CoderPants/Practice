@@ -40,6 +40,11 @@ public:
 
     void drawFilters();
 
+    inline bool checkColorPixel(int x, int y, QRgb color)
+    { return waterFall->pixel(x, y) != color; }
+
+    void setPixelLine(int x, int y, QRgb color);
+
     void drawWaterfall();
 
     void drawGraphs();
@@ -85,8 +90,8 @@ private:
 
     //Filters for spectrum
     QLineSeries *topLine, *bottomLine;
-    QPointF *startT, *endT;
-    QPointF *startB, *endB;
+    QPointF *startTopLine, *endTopLine;
+    QPointF *startBottomLine, *endBottomLine;
 
     double topFilter;
     double bottomFilter;
@@ -105,7 +110,10 @@ private:
     const int REDUCTION = 7;
 
     //Step for waterfall lines 8 pixels
-    const int pixelStep = 8;
+    const int PIXEL_STEP = 8;
+
+    //Width of pixel line
+    const int PIXEL_LINE_WIDTH = 5;
 
     QVBoxLayout *areaForWidget;
 
@@ -143,6 +151,9 @@ private:
     qint64 elapsed;
     int fpsCount;
     qreal fps;
+
+    //Constant of accuracy
+    const double EPSILON = std::numeric_limits<double>::epsilon();
 
 };
 
