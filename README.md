@@ -1,2 +1,2 @@
 # Practice
-App for oscilogramm, spectrum and waterfall
+App for oscillogram, spectrum and waterfall
