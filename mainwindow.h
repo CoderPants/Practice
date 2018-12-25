@@ -43,7 +43,7 @@ public:
     inline bool checkColorPixel(int x, int y, QRgb color)
     { return waterFall->pixel(x, y) != color; }
 
-    void setPixelLine(int x, int y, QRgb color);
+    void setPixelLine(int x, int y, QColor *color, double fftw, int position);
 
     void drawWaterfall();
 
@@ -107,15 +107,16 @@ private:
     int heightWf;
 
     //Step with which we reduce number of pixels, drawn on the image
-    const int REDUCTION = 7;
+    const int REDUCTION = 5;
 
-    //Step for waterfall lines 8 pixels
-    const int PIXEL_STEP = 8;
+    //Step for waterfall lines
+    const int PIXEL_STEP = 10;
 
     //Width of pixel line
-    const int PIXEL_LINE_WIDTH = 5;
+    const int PIXEL_LINE_WIDTH = 8;
 
-    QVBoxLayout *areaForWidget;
+    QVBoxLayout *areaForOscillogram;
+    QVBoxLayout *areaForSpectrum;
 
     //Working with dots
     qint8 maxImSample;

@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setFixedSize(1200, 710);
+    this->setFixedSize(1665, 1000);
 
     //App color
     QPalette Pal(palette());
@@ -119,23 +119,30 @@ MainWindow::MainWindow(QWidget *parent) :
     bottomLine->setColor(QColor(255, 255, 240, 150));
 
     //Adding to the vertical box layout
-    areaForWidget = new QVBoxLayout();
-    areaForWidget->setSpacing(0);
-    areaForWidget->setMargin(0);
-    areaForWidget->addWidget(specChartView);
-    areaForWidget->addWidget(reChartView);
-    areaForWidget->addWidget(imChartView);
-    ui->magnitudeGraph->setLayout(areaForWidget);
+    areaForOscillogram = new QVBoxLayout();
+    areaForOscillogram->setSpacing(0);
+    areaForOscillogram->setMargin(0);
+    areaForOscillogram->addWidget(reChartView);
+    areaForOscillogram->addWidget(imChartView);
+    ui->magnitudeGraph->setLayout(areaForOscillogram);
+
+    areaForSpectrum = new QVBoxLayout();
+    areaForSpectrum->setSpacing(0);
+    areaForSpectrum->setMargin(0);
+    areaForSpectrum->addWidget(specChartView);
+    ui->spectrumWidget->setLayout(areaForSpectrum);
 
     //WaterFall graph
     widthWf = ui->waterFallLabel->width();
     heightWf = ui->waterFallLabel->height();
+    qDebug() << widthWf << heightWf;
 
     waterFall = new QImage(widthWf, heightWf, QImage::Format_RGB32);
     ui->waterFallLabel->setPixmap(QPixmap::fromImage(*waterFall));
 
-    averageColor = new QColor(0, 0, 0);
-    topColor = new QColor(255, 255, 240);
+    //Because, sometimes top and bottom color can be (0, 0, 0)
+    averageColor = new QColor(1, 1, 1);
+    topColor = new QColor(0, 0, 255);
     bottomColor = new QColor(255, 0, 0);
 
     pixelLine = 0;
@@ -237,7 +244,7 @@ MainWindow::~MainWindow()
     delete specChart;
     delete specChartView;
 
-    delete areaForWidget;
+    delete areaForOscillogram;
 
     delete waterFall;
 
@@ -282,11 +289,41 @@ void MainWindow::drawFilters()
 
 }
 
-void MainWindow::setPixelLine(int x, int y, QRgb color)
+void MainWindow::setPixelLine(int x, int y, QColor *color, double fftw, int position)
 {
+    switch(position)
+    {
+    //if it's above topFilter
+    case(1):
+        if(fftw - topFilter > 255)
+        {
+            color->setRgb(0, 0, 255);
+        }
+        else
+        {
+            color->setRgb(0, 0, static_cast<int>(fftw - topFilter));
+        }
+        break;
+
+    //if it's below bottomFilter
+    case(2):
+        if(fabs(fftw - bottomFilter) > 255)
+        {
+            color->setRgb(255, 0, 0);
+        }
+        else
+        {
+            color->setRgb(static_cast<int>(fabs(fftw - bottomFilter)), 0, 0);
+        }
+        break;
+
+    default:
+        break;
+
+    }
     for(int i = 0; i < PIXEL_LINE_WIDTH; ++i)
     {
-        waterFall->setPixel(x, y+i, color);
+        waterFall->setPixel(x, y+i, color->rgb());
     }
 }
 
@@ -295,7 +332,7 @@ void MainWindow::setPixelLine(int x, int y, QRgb color)
 *Using lines of 5 pixels
 *Checking for the same color, and for the unchanged filters
 *If in the middle of the filters -> black color
-*If above topFilter -> white color
+*If above topFilter -> blue color
 *If below bottomFilter -> red color
 *Drawing till the end of the label
 *then, zero iterator
@@ -311,15 +348,16 @@ void MainWindow::drawWaterfall()
                 byteVector[i].fftw > bottomFilter &&
                 checkColorPixel(i/REDUCTION, pixelLine, averageColor->rgb()) )
         {
-              setPixelLine(i/REDUCTION, pixelLine, averageColor->rgb());
+              setPixelLine(i/REDUCTION, pixelLine, averageColor, byteVector[i].fftw, 0);
         }
 
-        //Above top filter-> white color
+        //Above top filter-> blue color
         if( fabs(topFilter) >= EPSILON &&
                 byteVector[i].fftw >= topFilter &&
                 checkColorPixel(i/REDUCTION, pixelLine, topColor->rgb()) )
         {
-            setPixelLine(i/REDUCTION, pixelLine, topColor->rgb());
+            setPixelLine(i/REDUCTION, pixelLine, topColor, byteVector[i].fftw, 1);
+
         }
 
         //Below bottom filter -> red color
@@ -327,7 +365,7 @@ void MainWindow::drawWaterfall()
                 byteVector[i].fftw <= bottomFilter &&
                 checkColorPixel(i/REDUCTION, pixelLine, bottomColor->rgb()) )
         {
-            setPixelLine(i/REDUCTION, pixelLine, bottomColor->rgb());
+            setPixelLine(i/REDUCTION, pixelLine, bottomColor, byteVector[i].fftw, 2);
         }
     }
 
@@ -469,10 +507,13 @@ void MainWindow::getSamples()
             auto start = steady_clock::now();
             fullDots();
             drawGraphs();
+
+            //If filters != 0
             if(fabs(topFilter - bottomFilter) >= EPSILON)
             {
                 drawWaterfall();
             }
+
             auto end = steady_clock::now();
             qDebug() << duration_cast<milliseconds>(end - start).count();
         }

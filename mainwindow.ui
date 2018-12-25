@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>681</height>
+    <width>1800</width>
+    <height>1063</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QWidget" name="centralWidget">
    <property name="minimumSize">
     <size>
-     <width>1172</width>
-     <height>620</height>
+     <width>1665</width>
+     <height>900</height>
     </size>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -90,6 +90,15 @@
                </color>
               </brush>
              </colorrole>
+             <colorrole role="PlaceholderText">
+              <brush brushstyle="NoBrush">
+               <color alpha="128">
+                <red>255</red>
+                <green>255</green>
+                <blue>240</blue>
+               </color>
+              </brush>
+             </colorrole>
             </active>
             <inactive>
              <colorrole role="WindowText">
@@ -146,6 +155,15 @@
                </color>
               </brush>
              </colorrole>
+             <colorrole role="PlaceholderText">
+              <brush brushstyle="NoBrush">
+               <color alpha="128">
+                <red>255</red>
+                <green>255</green>
+                <blue>240</blue>
+               </color>
+              </brush>
+             </colorrole>
             </inactive>
             <disabled>
              <colorrole role="WindowText">
@@ -199,6 +217,15 @@
                 <red>100</red>
                 <green>100</green>
                 <blue>100</blue>
+               </color>
+              </brush>
+             </colorrole>
+             <colorrole role="PlaceholderText">
+              <brush brushstyle="NoBrush">
+               <color alpha="128">
+                <red>255</red>
+                <green>255</green>
+                <blue>240</blue>
                </color>
               </brush>
              </colorrole>
@@ -343,13 +370,35 @@ color : rgb(255,255,240);</string>
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalGraphLayout">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QWidget" name="spectrumWidget" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>200</height>
+         </size>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="waterFallLabel">
         <property name="minimumSize">
          <size>
-          <width>1172</width>
-          <height>80</height>
+          <width>1640</width>
+          <height>250</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>250</height>
          </size>
         </property>
         <property name="text">
@@ -357,11 +406,21 @@ color : rgb(255,255,240);</string>
         </property>
        </widget>
       </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalGraphLayout">
       <item>
        <widget class="QWidget" name="magnitudeGraph" native="true">
         <property name="minimumSize">
          <size>
           <width>1172</width>
+          <height>400</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
           <height>400</height>
          </size>
         </property>
@@ -379,7 +438,7 @@ color : rgb(255,255,240);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1280</width>
+     <width>1800</width>
      <height>22</height>
     </rect>
    </property>
