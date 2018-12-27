@@ -142,8 +142,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Because, sometimes top and bottom color can be (0, 0, 0)
     averageColor = new QColor(1, 1, 1);
-    topColor = new QColor(0, 0, 255);
-    bottomColor = new QColor(255, 0, 0);
+    topColor = new QColor(255, 0, 0);
+    bottomColor = new QColor(0, 0, 255);
 
     pixelLine = 0;
 
@@ -251,7 +251,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::fullDots()
+void MainWindow::fillDots()
 {
     for(int i = 0; i < SAMPLE_BLOCK; i++)
     {
@@ -289,7 +289,7 @@ void MainWindow::drawFilters()
 
 }
 
-void MainWindow::setPixelLine(int x, int y, QColor *color, double fftw, int position)
+void MainWindow::setPixelLine(const int x, const int y, QColor *color, const double fftw, const int position)
 {
     switch(position)
     {
@@ -297,11 +297,11 @@ void MainWindow::setPixelLine(int x, int y, QColor *color, double fftw, int posi
     case(1):
         if(fftw - topFilter > 255)
         {
-            color->setRgb(0, 0, 255);
+            color->setRgb(255, 0, 0);
         }
         else
         {
-            color->setRgb(0, 0, static_cast<int>(fftw - topFilter));
+            color->setRgb(static_cast<int>(fftw - topFilter), 0, 0);
         }
         break;
 
@@ -309,11 +309,11 @@ void MainWindow::setPixelLine(int x, int y, QColor *color, double fftw, int posi
     case(2):
         if(fabs(fftw - bottomFilter) > 255)
         {
-            color->setRgb(255, 0, 0);
+            color->setRgb(0, 0, 255);
         }
         else
         {
-            color->setRgb(static_cast<int>(fabs(fftw - bottomFilter)), 0, 0);
+            color->setRgb(0, 0, static_cast<int>(fabs(fftw - bottomFilter)));
         }
         break;
 
@@ -332,12 +332,11 @@ void MainWindow::setPixelLine(int x, int y, QColor *color, double fftw, int posi
 *Using lines of 5 pixels
 *Checking for the same color, and for the unchanged filters
 *If in the middle of the filters -> black color
-*If above topFilter -> blue color
-*If below bottomFilter -> red color
+*If above topFilter -> red color
+*If below bottomFilter -> blue color
 *Drawing till the end of the label
 *then, zero iterator
 */
-// i/REDUCTION to inline function (inline int Reduction(int i) { return i/REDUCTION;})
 
 void MainWindow::drawWaterfall()
 {
@@ -346,26 +345,25 @@ void MainWindow::drawWaterfall()
         //In the middle of the filters -> black color
         if( byteVector[i].fftw < topFilter &&
                 byteVector[i].fftw > bottomFilter &&
-                checkColorPixel(i/REDUCTION, pixelLine, averageColor->rgb()) )
+                checkColorPixel(getX(i), pixelLine, averageColor->rgb()) )
         {
-              setPixelLine(i/REDUCTION, pixelLine, averageColor, byteVector[i].fftw, 0);
+              setPixelLine(getX(i), pixelLine, averageColor, byteVector[i].fftw, 0);
         }
 
-        //Above top filter-> blue color
+        //Above top filter -> red color
         if( fabs(topFilter) >= EPSILON &&
                 byteVector[i].fftw >= topFilter &&
-                checkColorPixel(i/REDUCTION, pixelLine, topColor->rgb()) )
+                checkColorPixel(getX(i), pixelLine, topColor->rgb()) )
         {
-            setPixelLine(i/REDUCTION, pixelLine, topColor, byteVector[i].fftw, 1);
-
+            setPixelLine(getX(i), pixelLine, topColor, byteVector[i].fftw, 1);
         }
 
-        //Below bottom filter -> red color
+        //Below bottom filter -> blue color
         if( fabs(bottomFilter) >= EPSILON &&
                 byteVector[i].fftw <= bottomFilter &&
-                checkColorPixel(i/REDUCTION, pixelLine, bottomColor->rgb()) )
+                checkColorPixel(getX(i), pixelLine, bottomColor->rgb()) )
         {
-            setPixelLine(i/REDUCTION, pixelLine, bottomColor, byteVector[i].fftw, 2);
+            setPixelLine(getX(i), pixelLine, bottomColor, byteVector[i].fftw, 2);
         }
     }
 
@@ -505,7 +503,7 @@ void MainWindow::getSamples()
             queue->unlock();
 
             auto start = steady_clock::now();
-            fullDots();
+            fillDots();
             drawGraphs();
 
             //If filters != 0
@@ -532,16 +530,20 @@ void MainWindow::getSamples()
 
 void MainWindow::on_recurseReadingFlag_stateChanged(int checkFlag)
 {
-    //If checkFlag = true
-    if(checkFlag == 2)
+    switch(checkFlag)
     {
-        worker->setRecurse(true);
-    }
-
     //If checkFlag = false
-    if(checkFlag == 0)
-    {
+    case(0):
         worker->setRecurse(false);
+        break;
+
+    //If checkFlag = true
+    case(2):
+        worker->setRecurse(true);
+        break;
+
+    default:
+        break;
     }
 }
 

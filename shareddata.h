@@ -44,7 +44,8 @@ public:
 
     //Elements
     QVector <Complex> getQueueElem();
-    void setQueueElem(QVector<Complex>*);
+
+    void setQueueElem(const QVector<Complex>*);
 
 signals:
     void lengthChanged(int length);
@@ -56,6 +57,7 @@ public slots:
 
 private:
     QQueue <QVector<Complex>> sampleQueue;
+
     QMutex mutex;
 };
 

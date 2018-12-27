@@ -25,7 +25,7 @@ QVector<Complex> SharedData::getQueueElem()
     return sampleQueue.dequeue();
 }
 
-void SharedData::setQueueElem(QVector<Complex> *byteVector)
+void SharedData::setQueueElem(const QVector<Complex> *byteVector)
 {
     sampleQueue.enqueue(*byteVector);
     qDebug() << "Queue size in Setter" << sampleQueue.size() << " Max size " << m_length;

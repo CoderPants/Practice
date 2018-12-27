@@ -36,14 +36,17 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void fullDots();
+    void fillDots();
 
     void drawFilters();
 
-    inline bool checkColorPixel(int x, int y, QRgb color)
+    inline bool checkColorPixel(const int x, const int y, const QRgb color)
     { return waterFall->pixel(x, y) != color; }
 
-    void setPixelLine(int x, int y, QColor *color, double fftw, int position);
+    inline int getX(const int i)
+    { return i / REDUCTION; }
+
+    void setPixelLine(const int x, const int y, QColor *color, const double fftw, const int position);
 
     void drawWaterfall();
 

@@ -31,11 +31,11 @@ public:
     inline void setQueue(SharedData *queue) { this->queue = queue; }
 
     //Flag
-    inline void setRecurse(bool flag) { isRecurse = flag; }
+    inline void setRecurse(const bool flag) { isRecurse = flag; }
 
     inline bool getRecurse() { return isRecurse; }
 
-    inline void setStopThread(bool flag) { stopThread = flag; }
+    inline void setStopThread(const bool flag) { stopThread = flag; }
 
     //FFTW
     void calcFFTW();
