@@ -164,10 +164,11 @@ MainWindow::MainWindow(QWidget *parent) :
     reVector.resize(SAMPLE_BLOCK);
     specVector.resize(SAMPLE_BLOCK);
 
-    //Max and min for xAxis
+    //Max and min for xAxis and yAxis for spectrum
     reXAxis->setRange(0, SAMPLE_BLOCK);
     imXAxis->setRange(0, SAMPLE_BLOCK);
     specXAxis->setRange(0, SAMPLE_BLOCK);
+    specYAxis->setRange(-1000, 1000);
 
     //Max and min for yAxis
     maxReSample = -127;
@@ -428,6 +429,7 @@ void MainWindow::drawGraphs()
 
     imChartView->update();
 
+    /*
     if(specYAxis->min() > minSpecSample)
     {
         specYAxis->setMin(minSpecSample - INDENT);
@@ -436,6 +438,7 @@ void MainWindow::drawGraphs()
     {
         specYAxis->setMax(maxSpecSample + INDENT);
     }
+    */
 
     specChartView->update();
 

@@ -113,10 +113,10 @@ private:
     const int REDUCTION = 5;
 
     //Step for waterfall lines
-    const int PIXEL_STEP = 10;
+    const int PIXEL_STEP = 5;
 
     //Width of pixel line
-    const int PIXEL_LINE_WIDTH = 8;
+    const int PIXEL_LINE_WIDTH = 3;
 
     QVBoxLayout *areaForOscillogram;
     QVBoxLayout *areaForSpectrum;
